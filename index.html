@@ -2,172 +2,175 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Atlas Studio Pro — File → Website (Client-only)</title>
-  <meta name="description" content="Convert PDF/DOCX/MD/TXT/CSV/Images to a beautiful website completely in your browser.">
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Libraries (CDN, client-side) -->
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1"
+  />
+  <title>Atlas Studio Pro — File → Website (100% Browser)</title>
+  <meta name="description" content="Convert PDF, DOCX, Markdown, TXT, CSV, and images (OCR) into a polished website entirely in your browser.">
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Playfair+Display:wght@600;800&display=swap" rel="stylesheet" />
+  <!-- Libraries (all client-side via CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/11.1.1/marked.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous"></script>
 </head>
 <body class="theme-midnight">
-  <div class="app">
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="top-left">
-        <div class="brand"><div class="brand-badge"></div><div><strong>Atlas Studio</strong><div class="muted">Pro — client only</div></div></div>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">Atlas Studio <span class="pro">Pro</span></div>
+        <div class="sub">File → Website · 100% Client-Side</div>
       </div>
-      <div class="top-right">
-        <div class="kbd muted">Ctrl/⌘ + S</div>
-        <button class="btn" id="btnShortcuts">Shortcuts</button>
-        <button class="btn" id="btnNew">New</button>
-        <button class="btn" id="btnLoad">Load</button>
-        <button class="btn primary" id="btnSave">Save</button>
-      </div>
-    </header>
-
-    <!-- Main 3-column layout -->
-    <div class="main">
-      <!-- Left: Project & TOC -->
-      <aside class="panel left" id="leftPanel">
-        <div class="head"><h3>Project</h3><div id="projectCounts" class="muted small">0 files · 0 pages</div></div>
-        <div class="body">
-          <input id="searchGlobal" class="input" placeholder="Search project (Ctrl/⌘+K)" />
-          <div class="muted small" style="margin-top:10px">Table of Contents</div>
-          <ul id="tocList" class="toc"></ul>
-
-          <div class="muted small" style="margin-top:12px">Recent uploads</div>
-          <div id="recentList" class="file-list"></div>
-        </div>
-      </aside>
-
-      <!-- Center: Workspace -->
-      <main class="panel center">
-        <div class="head">
-          <h3>Workspace</h3>
-          <div class="row">
-            <div class="pill muted">No server</div>
-            <div class="pill muted">GH Pages ready</div>
-            <div class="pill muted">Offline capable</div>
-          </div>
-        </div>
-
-        <div class="body">
-          <section class="card dropcard" id="dropzone">
-            <h4>Import files</h4>
-            <p class="muted">Drag & drop or click <em>Select files</em>. Supported: PDF, DOCX, MD, TXT, CSV, PNG/JPG/GIF</p>
-            <div class="row" style="margin-top:10px;">
-              <input type="file" id="fileInput" multiple class="input" accept=".pdf,.docx,.md,.txt,.csv,.png,.jpg,.jpeg,.gif,.odt" />
-              <button class="btn" id="btnConvert">Convert</button>
-            </div>
-            <div id="fileQueue" class="file-list" style="margin-top:14px"></div>
-          </section>
-
-          <section class="card editor">
-            <div class="editor-head">
-              <div>
-                <button class="btn" id="btnToggleEdit">Toggle Edit (Ctrl/⌘+E)</button>
-                <button class="btn" id="btnFind">Find</button>
-                <button class="btn primary" id="btnExport">Export ZIP</button>
-              </div>
-              <div class="row">
-                <select id="ocrLang" class="input small">
-                  <option value="eng">OCR: English</option>
-                  <option value="eng+spa">OCR: English + Spanish</option>
-                  <option value="fra">OCR: French</option>
-                </select>
-                <label class="small"><input type="checkbox" id="optSplitPdf" checked> Split PDF pages</label>
-                <label class="small"><input type="checkbox" id="optRenderPdfImage"> Render first page image</label>
-                <label class="small"><input type="checkbox" id="optBuildToc" checked> Build TOC</label>
-              </div>
-            </div>
-
-            <div class="editor-body">
-              <iframe id="preview" title="Preview"></iframe>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <!-- Right: Inspector -->
-      <aside class="panel right" id="rightPanel">
-        <div class="head"><h3>Inspector</h3><div class="muted small" id="inspectorHint">Ready</div></div>
-        <div class="body">
-          <div class="field">
-            <label class="label">Theme</label>
-            <select id="themeSelect" class="input">
-              <option value="midnight">Midnight</option>
-              <option value="light">Light</option>
-              <option value="sepia">Sepia</option>
-              <option value="solar">Solarized</option>
-              <option value="emerald">Emerald</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label">Primary Hue</label>
-            <input type="color" id="primaryHue" class="input" value="#6a8dff">
-          </div>
-
-          <div class="field">
-            <label class="label">Font</label>
-            <select id="fontSelect" class="input">
-              <option value="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif">Inter</option>
-              <option value="Playfair Display, Georgia, serif">Playfair</option>
-              <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Mono</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="label">Export Mode</label>
-            <select id="exportMode" class="input">
-              <option value="single">Single HTML (self-contained)</option>
-              <option value="split">Split (index + assets)</option>
-              <option value="multipage">Multi-page (page per file/page)</option>
-            </select>
-          </div>
-
-          <div style="margin-top:10px">
-            <button class="btn primary" id="btnBuild">Build Preview</button>
-            <button class="btn" id="btnAnalytics">Update Analytics</button>
-          </div>
-
-          <div style="margin-top:16px">
-            <h4 class="small muted">Analytics</h4>
-            <div id="analytics" class="muted">—</div>
-            <canvas id="chartWords" height="120" style="margin-top:8px"></canvas>
-          </div>
-
-          <div style="margin-top:16px">
-            <h4 class="small muted">SEO / PWA</h4>
-            <div class="field"><input id="siteTitle" class="input" placeholder="Site title (optional)"></div>
-            <div class="field"><input id="siteDesc" class="input" placeholder="Short description"></div>
-            <div class="field"><label>Include PWA: <select id="pwaMode" class="input"><option value="none">No</option><option value="basic">Basic</option></select></label></div>
-          </div>
-        </div>
-      </aside>
     </div>
+    <nav class="actions">
+      <button class="btn" id="btnShortcuts" title="Shortcuts ( ? )">⌘/Ctrl + ?</button>
+      <button class="btn" id="btnNew">New</button>
+      <button class="btn" id="btnLoad">Load</button>
+      <button class="btn primary" id="btnSave">Save</button>
+    </nav>
+  </header>
 
-    <!-- Footer -->
-    <footer class="footer">
-      <div>Atlas Studio Pro • 100% client-side • Save/Load projects locally</div>
-    </footer>
-  </div>
+  <main class="shell">
+    <!-- LEFT: Project & TOC -->
+    <aside class="panel left">
+      <div class="panel-head">
+        <h3>Project</h3>
+        <div id="projectMeta" class="muted small">0 files · 0 pages</div>
+      </div>
+      <div class="panel-body">
+        <input id="searchProject" class="input" placeholder="Search project (Ctrl/⌘+K)" />
+        <div class="spacer-xs"></div>
 
-  <!-- App logic -->
+        <div class="label muted small">Table of Contents</div>
+        <ul id="tocList" class="toc"></ul>
+
+        <div class="spacer"></div>
+        <div class="label muted small">Recent</div>
+        <div id="recentList" class="list"></div>
+      </div>
+    </aside>
+
+    <!-- CENTER: Workspace -->
+    <section class="panel center">
+      <div class="panel-head">
+        <h3>Workspace</h3>
+        <div class="badges">
+          <span class="pill">No server</span>
+          <span class="pill">GH Pages ready</span>
+          <span class="pill">Offline export</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <!-- Import Card -->
+        <section id="dropzone" class="card drop">
+          <div class="drop-inner">
+            <h4>Import files</h4>
+            <p class="muted">Drag & drop or pick files. Supported: <strong>PDF</strong>, <strong>DOCX</strong>, <strong>MD</strong>, <strong>TXT</strong>, <strong>CSV</strong>, <strong>PNG/JPG</strong> (OCR)</p>
+            <div class="row">
+              <input id="fileInput" type="file" class="input" multiple accept=".pdf,.docx,.md,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp"/>
+              <button id="btnQueueClear" class="btn">Clear Queue</button>
+              <button id="btnConvert" class="btn primary">Convert</button>
+            </div>
+            <div id="queue" class="list"></div>
+          </div>
+        </section>
+
+        <!-- Editor + Preview -->
+        <section class="card editor">
+          <div class="editor-top">
+            <div class="row">
+              <button class="btn" id="btnBuild">Build Preview</button>
+              <button class="btn" id="btnToggleEdit">Toggle Edit (Ctrl/⌘+E)</button>
+              <button class="btn" id="btnFind">Find</button>
+              <button class="btn primary" id="btnExport">Export ZIP</button>
+            </div>
+            <div class="row wrap">
+              <select id="ocrLang" class="input small">
+                <option value="eng" selected>OCR: English</option>
+                <option value="eng+spa">OCR: English + Spanish</option>
+                <option value="fra">OCR: French</option>
+              </select>
+              <label class="small"><input type="checkbox" id="optSplitPdf" checked> Split PDF pages</label>
+              <label class="small"><input type="checkbox" id="optRenderPdfImage"> Render page image</label>
+              <label class="small"><input type="checkbox" id="optBuildToc" checked> Build internal TOC</label>
+            </div>
+          </div>
+          <div class="editor-body">
+            <iframe id="preview" title="Preview"></iframe>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- RIGHT: Inspector -->
+    <aside class="panel right">
+      <div class="panel-head">
+        <h3>Inspector</h3>
+        <div id="status" class="muted small">Ready</div>
+      </div>
+      <div class="panel-body">
+        <div class="field">
+          <label class="label">Theme</label>
+          <select id="themeSelect" class="input">
+            <option value="midnight" selected>Midnight</option>
+            <option value="light">Light</option>
+            <option value="sepia">Sepia</option>
+            <option value="solar">Solarized</option>
+            <option value="emerald">Emerald</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">Primary Color</label>
+          <input id="primaryColor" type="color" value="#6a8dff" class="input"/>
+        </div>
+
+        <div class="field">
+          <label class="label">Font</label>
+          <select id="fontSelect" class="input">
+            <option value="Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif">Inter</option>
+            <option value="Playfair Display, Georgia, serif">Playfair</option>
+            <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Monospace</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="label">Export Mode</label>
+          <select id="exportMode" class="input">
+            <option value="single" selected>Single HTML (self-contained)</option>
+            <option value="split">Split (index + assets)</option>
+            <option value="multipage">Multi-page</option>
+          </select>
+        </div>
+
+        <div class="spacer"></div>
+        <button class="btn primary" id="btnAnalytics">Update Analytics</button>
+        <div class="spacer-xs"></div>
+        <div id="analytics" class="muted small">—</div>
+        <canvas id="chartWords" height="120"></canvas>
+
+        <div class="spacer"></div>
+        <h4 class="muted small">SEO / PWA</h4>
+        <input id="siteTitle" class="input" placeholder="Site title" />
+        <input id="siteDesc" class="input" placeholder="Short description" />
+        <select id="pwaMode" class="input">
+          <option value="none" selected>Include PWA: No</option>
+          <option value="basic">Include PWA: Basic</option>
+        </select>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <div>Atlas Studio Pro • Client-only builder • Save/Load projects locally • Perfect for GitHub Pages</div>
+  </footer>
+
   <script src="script.js"></script>
 </body>
 </html>
